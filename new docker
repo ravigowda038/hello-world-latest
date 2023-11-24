@@ -1,0 +1,55 @@
+pipeline {
+    agent {label 'agent-1'}
+    
+    stages {
+        stage('step-1') {
+            steps {
+                echo 'cloning'
+                git branch: 'main', url: 'https://github.com/ravigowda038/hello-world-latest.git'
+            }
+        }
+        stage('step-2') {
+            steps {
+                echo 'delete old'
+                sh 'docker rm -f images || true'
+                sh 'docker rmi -f $(docker images -q)'
+            }
+        }
+        stage('step-2.1') {
+            steps {
+                echo 'maven build'
+                sh 'mvn clean package'
+            }
+        }
+        stage('image build') {
+            steps {
+                echo 'build image '
+                sh 'docker build -t hello_world_rv .' 
+            }
+        }
+        stage('image-tag') {
+            steps {
+                echo 'image-tag '
+                sh 'docker tag hello_world_rv ravigowda038/hello-rvg' 
+            }
+        }
+        stage(' docker hub') {
+            steps {
+                echo 'push to docker hub'
+                sh 'docker login -u ravigowda038 -p Ravigowda@9113628961' 
+            }
+        }
+         stage('push to docker hub') {
+            steps {
+                echo 'push to docker hub'
+                sh 'docker push ravigowda038/hello-rvg' 
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo 'Deploy'
+                sh 'docker run -d --name images -p 8080:8080 ravigowda038/hello-rvg:latest ' 
+            }
+        }
+    }
+}
